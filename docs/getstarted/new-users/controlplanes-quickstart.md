@@ -3,63 +3,226 @@ title: Quickstart
 pagination_prev: null
 pagination_next: null
 ---
-TEMP
 
-**Prerequisites:** kind · `kubectl` · Helm · Upbound account · [up CLI][upCli].
+Get a control plane, the Hub, and a sample project running on your laptop in
+around 10 minutes.
+<!-- vale gitlab.FutureTense = NO -->
+In this quickstart, you'll create a control plane for a project and Upbound hub.
+You'll deploy a web app and review resources in the Upbound Console.
+<!-- vale gitlab.FutureTense = YES -->
 
-## Step 1: Log in to Upbound
+**Prerequisites:**
+* `kind`
+* `kubectl`
+* `helm`
+* [up CLI][upCli]
+* An Upbound account
 
-- `up login` (community UXP requires login). Browser auth, then close.
+## Step 1: Run the installation script
 
-## Step 2: Install Insights (demo)
+The script creates a kind cluster, installs the control plane and Hub
+components, and initializes a sample project. It prompts you to log in to
+Upbound the first time it runs.
 
-1. Create the KIND cluster with the gateway port map (`30443` to host `8443`),
-    `kind create cluster --config kind-demo.yaml`.
-2. `helm install hub <chart-ref> --namespace hub --create-namespace --set global.demo.enabled=true`.
-3. `kubectl -n hub wait --for=condition=ready pod --all --timeout=5m`.
-4. Open the Console at `{console-demo-url}`, log in `admin`/`admin`.
+<!-- vale Google.Units = NO -->
+<!-- vale Google.Ordinal = NO -->
+:::important
+The hub installation in this quickstart is free to try from July
+31st, 2026 to October 29th, 2026.
+:::
+<!-- vale Google.Units = YES -->
+<!-- vale Google.Ordinal = YES -->
 
-- Placeholders: `<chart-ref>`, `{console-demo-url}` (from release notes).
-- Dedup note: this demo block should become a shared partial once the Insights
-    section's demo page exists (currently inlined, single consumer).
+<details>
 
-## Step 3: Initialize a project
+    <summary> Quickstart install script </summary>
+    ```shell title="quickstart.sh" manifest="/manifests/getstarted/quickstart.sh"
+    ```
+</details>
 
-- `up project init -t project-template-k8s-webapp -l python my-webapp`.
+Download and run it:
 
-## Step 4: Run it locally
+```shell
+curl -fsSL "https://docs.upbound.io/manifests/getstarted/quickstart.sh" -o quickstart.sh
+bash quickstart.sh
+```
 
-- `up project run --local --ingress`. Builds functions and config, creates a
-    local dev control plane, and prints its context and Console endpoint.
+The script keeps a Console port-forward running in your terminal. Leave it
+running and open a new terminal for the following steps.
 
-## Step 5: Deploy an example resource
+## Step 2: Deploy an example resource
 
-- `cd my-webapp/examples/webapps && kubectl apply -f example.yaml`.
+```shell
+kubectl apply -f my-webapp/examples/webapps/example.yaml
+```
 
-## Step 6: See it in the Console
+## Step 3: See it in the Console
 
-TODO: open question. `up project run --local` creates its own dev control plane,
-separate from the demo's bundled one. So the Step 5 resources won't appear in the
-demo Console until you connect that dev control plane to Insights. Confirm the
-intended path with engineering (auto-register on `up project run`, or manual
-[connect][connect]) before writing this step. Don't publish until you verify it.
+The project runs on the same cluster as the Hub, so the resource appears in the
+Console automatically, with no extra connection step. Open the Console and find
+your new `webservice` resource.
 
-## Step 7: Change and reconcile
+To watch the Hub reflect configuration changes, scale the replica count up:
 
-- Edit the example (`nginx` to `httpd`), reapply, `kubectl get managed -w`, and
-    watch the Console update.
+```shell
+kubectl patch webapp webservice -n default --type=merge -p '{"spec":{"parameters":{"replicas":3}}}'
+```
 
-## Step 8: Clean up
+The Console shows the new replica count as the control plane reconciles.
 
-- Run `kubectl delete -f example.yaml`, then `kind delete cluster --name
-    up-my-webapp` and `kind delete cluster --name hub-demo`.
+## Step 4: Create and connect a second control plane
+
+A single control plane is where you start. As you scale, the Hub helps you
+manage them by aggregating resources across many clusters into one view.
+
+This section spins up a second local
+kind cluster, installs a hub-connector in it, and registers it against your
+running demo.
+
+If you're ready to build your own platform, skip to the [clean up][#clean-up]
+section.
+
+The second cluster doesn't need host port mappings. It communicates back to the Hub
+API over the Docker network.
+
+```shell
+kind create cluster --name hub-demo-extra
+```
+
+## Step 5: Expose the Hub API
+
+In the demo install, `hub-core` and its token-exchange Service are both
+ClusterIP, reachable only from inside the demo cluster. Rather than modify those
+Services, add two new NodePort Services alongside them. 
+
+In a production
+installation, all traffic would route through a proper Gateway. This step is
+only required because you're connecting between kind clusters.
+
+```shell
+kubectl --context kind-quickstart -n hub apply -f - <<'EOF'
+apiVersion: v1
+kind: Service
+metadata:
+  name: hub-core-nodeport
+spec:
+  type: NodePort
+  selector:
+    app.kubernetes.io/name: hub-core
+    app.kubernetes.io/instance: hub
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      nodePort: 30080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hub-core-token-exchange-nodeport
+spec:
+  type: NodePort
+  selector:
+    app.kubernetes.io/name: hub-core
+    app.kubernetes.io/instance: hub
+  ports:
+    - name: token-exchange
+      port: 8444
+      targetPort: token-exchange
+      nodePort: 30444
+EOF
+```
+
+The selector matches the labels the `hub-core` Pods already carry, so these
+Services route to the running API without touching the demo's original ClusterIP
+Services.
+
+The connector in the second cluster dials `quickstart-control-plane:30080` for the
+API and `:30444` for token exchange. Docker's embedded DNS resolves the hostname
+to the demo cluster's control-plane container.
+
+## Step 6: Mint a registration token
+
+The Hub issues a per-control-plane bootstrap secret called a registration token.
+The connector presents this token when it first contacts the Hub API, so the Hub
+knows which control plane the connector represents.
+
+1. Open the Hub UI at `https://hub.127.0.0.1.nip.io:8443/infrastructure/control-planes`
+   and sign in as `admin` / `admin` if you aren't already.
+2. Create a new ControlPlane in the `default` realm and name it `extra`.
+3. Copy the registration token the UI displays. It's shown once.
+4. Set the token as a shell variable for the next step:
+
+```shell
+export HUB_EXTRA_CTP_TOKEN=<paste-registration-token-here>
+```
+
+## Step 7: Install hub-connector in the second cluster
+<!-- vale write-good.Passive = NO -->
+`hub-connector` is published as its own chart, separate from the umbrella `hub`
+chart.
+<!-- vale write-good.Passive = YES -->
+
+```shell
+kubectl --context kind-hub-demo-extra create namespace hub
+
+kubectl --context kind-hub-demo-extra -n hub create secret generic hub-connector-credentials \
+  --from-literal=registrationToken="$HUB_EXTRA_CTP_TOKEN"
+
+helm install hub-connector oci://xpkg.upbound.io/upbound/hub-connector \
+  --kube-context kind-hub-demo-extra \
+  --version 1.0.0-rc.1 \
+  --namespace hub \
+  --set connector.hub.url=http://quickstart-control-plane:30080 \
+  --set connector.hub.tokenExchangeUrl=http://quickstart-control-plane:30444 \
+  --set connector.hub.allowInsecure=true \
+  --set connector.credentials.existingSecretRef.name=hub-connector-credentials
+```
+
+Wait for the connector to come up:
+
+```shell
+kubectl --context kind-hub-demo-extra -n hub wait --for=condition=ready pod --all --timeout=2m
+```
+Refresh the Hub UI. Two checks confirm the second cluster is online and
+reporting:
+
+- The control planes page shows `extra` alongside the demo's `default` with a
+  status of `Ready`.
+- The resources page, filtered by control plane name `extra`, shows the
+  resources installed in the second cluster.
+
+:::tip
+If the new control plane never shows up or never reports any resources, inspect
+the connector logs:
+
+```shell
+kubectl --context kind-hub-demo-extra -n hub logs deployment/hub-connector
+```
+
+The most common failure is the connector being unable to reach
+`quickstart-control-plane:30080`, usually because the second cluster didn't join
+the shared kind Docker network. Run
+`docker network connect kind hub-demo-extra-control-plane` and restart the
+connector Pod.
+:::
+
+## Clean up
+
+Once you're finished with this quickstart, be sure to clean up the kind
+resources you created.
+
+```shell
+kubectl delete -f my-webapp/examples/webapps/example.yaml
+kind delete cluster --name hub-demo-extra
+kind delete cluster --name quickstart
+```
 
 ## Next steps
 
 - [Builders workshop][workshop] for real cloud resources.
-- [Insights overview][insights] for the full-fleet story.
+- [Hub overview][hub] for the full-fleet story.
 
-[upCli]: /manuals/cli/overview
-[connect]: /manuals/platform/insights/connections
-[insights]: /manuals/platform/insights/overview
+[upCli]: /controlplanes/cli/overview
+[hub]: /hub/overview
 [workshop]: /getstarted/builders-workshop/project-foundations

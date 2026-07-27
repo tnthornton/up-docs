@@ -5,95 +5,169 @@ pagination_prev: null
 pagination_next: null
 ---
 
-import CardGrid from '@site/src/components/CardGrid';
+Already running Crossplane? This guide walks through upgrading a control
+plane to Upbound with a throwaway cluster so you can rehearse the
+mechanics.
 
+<!-- vale gitlab.FutureTense = NO -->
+In this guide, you'll stand up a Crossplane cluster with one resource, export
+state, import to a new Upbound control plane, and activate it. You'll use
+the Upbound hub to watch your resource reconcile on the other side.
+<!-- vale gitlab.FutureTense = YES -->
 
-This guide is for existing Crossplane users to see how to upgrade to UXP and see
-a subset of some of the added functionality.
-
-In this guide, you'll create a kind cluster, install Crossplane `${version}`, and
-deploy a single composite resource. Next, you'll begin the upgrade process to
-UXP on the cluster and watch as your composite resource is migrated to the new
-control plane.
-
-## Prerequisites
-
-- kind installed (for the disposable "before" cluster)
-- kubectl
-- An Upbound account
-- The up CLI installed
+**Prerequisites:**
+* `kind` (for the disposable "before" cluster)
+* `kubectl`
+* `helm`
+* [up CLI][upCli]
+* An Upbound account
 
 ## Step 1: Log in to Upbound
 
-- Same as new-user quickstart — `up login`
-- [Reuse verbatim; no reason for this to diverge]
+```shell
+up login
+```
 
 ## Step 2: Stand up a throwaway Crossplane control plane
 
-- Minimal vanilla install — plain XRD + Composition, no Projects
-  tooling, no `up project` anything
-- Deploy one small composite resource so there's something real to
-  migrate (not zero resources, not a whole platform)
-- [Decide: script this with a one-shot install command, or walk
-  through it step by step? Probably the former — this cluster is
-  scaffolding, not the lesson]
+The setup script creates a kind cluster, installs Crossplane and the
+`provider-nop` provider, creates a single composite resource so
+there's something real to migrate.
+
+<details>
+
+    <summary> Crossplane setup script </summary>
+    ```shell title="setup-crossplane.sh" manifest="/manifests/getstarted/migration/setup-crossplane.sh"
+    ```
+</details>
+
+Download and run it:
+
+```shell
+curl -fsSL "https://docs.upbound.io/manifests/getstarted/migration/setup-crossplane.sh" -o setup-crossplane.sh
+bash setup-crossplane.sh
+```
+
+Confirm the composite resource reaches a ready state before you continue:
+
+```shell
+kubectl get xapp sample-app
+```
 
 ## Step 3: Export your control plane's state
 
-- `up controlplane migration export --kubeconfig <path> --output <file>`
-- **Check-in:** confirm the `--kubeconfig` path points at the throwaway
-  cluster, not whatever's currently active — this is the first of the
-  three risk points we flagged
-- Show expected export output (types found, resources exported,
-  archive written)
+Export the source cluster's Crossplane state into a single archive.
+
+:::warning
+Point `--kubeconfig` at the throwaway cluster, not whatever context happens to
+be active. Exporting the wrong cluster is the first place this goes sideways.
+:::
+
+```shell
+up controlplane migration export \
+  --kubeconfig ~/.kube/config \
+  --output crossplane-export.tar.gz
+```
+
+The command reports the types it found, the resources it exported, and the
+archive it wrote:
+
+```shell
+Exporting control plane state...
+  Found 4 resource types
+  Exported 6 resources
+Wrote archive to crossplane-export.tar.gz
+```
 
 ## Step 4: Create your Upbound control plane
 
-- `up controlplane create <name>`
-- `up ctx "<org>/<space>/<group>/<name>"`
-- **Check-in:** this command silently repoints your active context —
-  confirm you're now targeting the new control plane before continuing
-  (second risk point)
+Create the destination control plane and switch your context to it.
+
+```shell
+up controlplane create <name>
+up ctx "<org>/<space>/<group>/<name>"
+```
+
+:::warning
+`up ctx` points your active context to the new control plane. Confirm you're
+targeting the destination before continuing, so the import lands where you
+expect.
+:::
 
 ## Step 5: Import the archive
 
-- `up controlplane migration import --input <file>`
-- Note: resources land paused by default — nothing reconciles yet
-- Show expected import output
+```shell
+up controlplane migration import --input crossplane-export.tar.gz
+```
+
+Imported resources land **paused** by default, so nothing reconciles yet. This
+is deliberate: it gives you a chance to review before anything acts on external
+infrastructure.
+
+```shell
+Importing control plane state...
+  Imported 6 resources (paused)
+Import complete
+```
 
 ## Step 6: Review before activating
 
-- Spot-check the imported resources/claims look right
-- **Check-in:** confirm you're pointed at the *new* control plane, not
-  the old source cluster, before running the unpause command — this is
-  the highest-stakes moment in the guide (third risk point); getting
-  this wrong means two control planes reconciling the same external
-  resources at once
+Spot-check that the imported resources and claims look right:
+
+```shell
+kubectl get managed
+kubectl get composite
+```
+<!-- vale Upbound.Spelling = NO -->
+:::warning
+This step is the highest-stakes moment in the migration. Before you unpause,
+confirm you're pointed at the **new** control plane, not the source cluster.
+Activating on the wrong cluster leaves two control planes reconciling the same
+external resources at once.
+:::
+<!-- vale Upbound.Spelling = YES -->
 
 ## Step 7: Activate
 
-- `kubectl annotate managed --all crossplane.io/paused-`
-- Confirm resources move to a synced/ready state
+Remove the paused annotation to let the new control plane take over
+reconciliation:
 
-## Step 8: See it in the console
+```shell
+kubectl annotate managed --all crossplane.io/paused-
+```
 
-- Same beat as the new-user quickstart's "see it in the console" step —
-  same destination, different path to get there
-- [Once Hub is wired up, this becomes the same link/step as the
-  new-user guide's equivalent moment]
+The resources move to a synced and ready state as the new control plane
+reconciles them:
 
-## Step 9: Clean up the throwaway cluster
+```shell
+kubectl get managed
+```
 
-- Delete the original OSS Crossplane cluster now that migration is
-  confirmed working
-- [Decide: is this "delete it" or "you can decommission this whenever
-  you're satisfied" — tone matters here since a real reader's actual
-  source cluster isn't disposable the way the tutorial one is]
+## Step 8: See it in the Console
+
+Open the [Upbound Console][console], select your new control plane, and find the
+migrated `sample-app` resource. 
+## Step 9: Clean up
+
+The tutorial's source cluster is disposable. To tear down:
+
+```shell
+kind delete cluster --name crossplane-source
+```
+
+:::note
+Your real source cluster isn't disposable the way this one is. When you migrate
+production, decommission the original cluster only after you've confirmed the
+new control plane is healthy and reconciling.
+:::
 
 ## Next steps
 
-- Link to the real migration path for their production cluster
-  (this quickstart proved the mechanics; production has real stakes)
-- [Once the Projects-coupling and v1→v2 questions from earlier resolve,
-  this is also where that guide would get linked, if it still exists
-  in this section]
+- [Migrate a production control plane][migrate] when you're ready for the real
+  thing.
+- [Hub overview][hub] for the full-fleet story.
+
+[upCli]: /controlplanes/cli/overview
+[console]: https://console.upbound.io
+[hub]: /hub/overview
+[migrate]: ./upgrading-to-upbound.md
