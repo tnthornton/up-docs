@@ -1,17 +1,37 @@
 ---
 title: Quickstart
+sidebar_position: 2
 pagination_prev: null
 pagination_next: null
 ---
 
-Get a control plane, the Hub, and a sample project running on your laptop in
-around 10 minutes.
 <!-- vale gitlab.FutureTense = NO -->
-In this quickstart, you'll create a control plane for a project and Upbound hub.
-You'll deploy a web app and review resources in the Upbound Console.
+In about 10 minutes, you'll run a control plane, the Hub, and a sample project on
+your laptop, deploy a web app, and review its resources in the Upbound Console.
 <!-- vale gitlab.FutureTense = YES -->
 
-**Prerequisites:**
+## Control planes and Upbound
+
+A Kubernetes control plane is the central management layer for your cluster. It
+exposes the Kubernetes API, stores cluster data, schedules pods, and runs the
+control loops that keep everything in sync.
+
+Crossplane applies that idea to resources outside the cluster: databases, IAM
+policies, compute, and anything else with an API. You manage each one with a
+_provider_, a package that lets Crossplane provision resources on an external
+service. Crossplane doesn't just create infrastructure, it reconciles it. If
+someone edits a security group in a cloud console, Crossplane returns it to your
+desired state, the same resilience Kubernetes gives your workloads.
+
+Upbound Crossplane (UXP) adds operational features Crossplane lacks out of the
+box: a secrets proxy, backup and restore, and control plane insights. Spaces go
+further, hosting many isolated control planes on shared infrastructure instead of
+a new cluster for each one.
+
+## Prerequisites:
+
+Before you begin, make sure you have:
+
 * `kind`
 * `kubectl`
 * `helm`
@@ -79,7 +99,7 @@ This section spins up a second local
 kind cluster, installs a hub-connector in it, and registers it against your
 running demo.
 
-If you're ready to build your own platform, skip to the [clean up][#clean-up]
+If you're ready to build your own platform, skip to the [clean up](#clean-up)
 section.
 
 The second cluster doesn't need host port mappings. It communicates back to the Hub

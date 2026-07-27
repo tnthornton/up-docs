@@ -1,21 +1,29 @@
 ---
-title: Upgrade quickstart
-sidebar_position: 2
+title: Upgrade from Crossplane
+sidebar_position: 3
 pagination_prev: null
 pagination_next: null
 ---
 
-Already running Crossplane? This guide walks through upgrading a control
-plane to Upbound with a throwaway cluster so you can rehearse the
-mechanics.
-
 <!-- vale gitlab.FutureTense = NO -->
-In this guide, you'll stand up a Crossplane cluster with one resource, export
-state, import to a new Upbound control plane, and activate it. You'll use
-the Upbound hub to watch your resource reconcile on the other side.
+Already running Crossplane? In this guide, you'll rehearse an upgrade on a
+throwaway cluster: stand up Crossplane with one resource, export its state,
+import it into a new Upbound control plane, activate it, and watch it reconcile
+in the Upbound hub.
 <!-- vale gitlab.FutureTense = YES -->
 
-**Prerequisites:**
+## Why upgrade to Upbound
+
+Upbound Crossplane (UXP) adds operational features useful for Crossplane
+operators. UXP gives you a secrets proxy, backup and restore, and control plane insights.
+This tutorial's upgrade path allows you to keep your existing compositions and managed
+resources.
+
+
+## Prerequisites:
+
+Before you begin, make sure you have:
+
 * `kind` (for the disposable "before" cluster)
 * `kubectl`
 * `helm`
@@ -147,9 +155,10 @@ kubectl get managed
 
 Open the [Upbound Console][console], select your new control plane, and find the
 migrated `sample-app` resource. 
-## Step 9: Clean up
 
-The tutorial's source cluster is disposable. To tear down:
+## Clean up
+
+When you're done with this quickstart, tear down the resources created:
 
 ```shell
 kind delete cluster --name crossplane-source
