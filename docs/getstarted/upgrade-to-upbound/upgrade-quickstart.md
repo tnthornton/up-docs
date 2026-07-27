@@ -167,7 +167,7 @@ new control plane is healthy and reconciling.
   thing.
 - [Hub overview][hub] for the full-fleet story.
 
-[upCli]: /controlplanes/cli/overview
+[upCli]: /manuals/cli/overview
 [console]: https://console.upbound.io
-[hub]: /hub/overview
+[hub]: /hub/
 [migrate]: ./upgrading-to-upbound.md

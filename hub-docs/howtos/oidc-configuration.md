@@ -4,9 +4,6 @@ sidebar_position: 3
 description: Configure Hub against an external OIDC provider.
 ---
 
-This page explains what Hub requires from an OIDC provider, the order to
-configure it, and how to pick a provider-specific sub-guide.
-
 Hub delegates all human authentication to an external OIDC provider. The
 provider issues ID tokens to users logging in to the Hub UI. Hub trusts those
 tokens and reads identity and group claims to drive authorization.

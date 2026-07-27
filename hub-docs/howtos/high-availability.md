@@ -4,8 +4,8 @@ sidebar_position: 12
 description: Run Hub with redundancy across nodes and zones.
 ---
 
-This page walks you through running Hub with enough redundancy that a single
-Pod, node, or zone failure doesn't interrupt service.
+Hub survives the loss of a single Pod, node, or zone when you run `hub-api` and
+`hub-webui` with multiple replicas and spread them intentionally.
 
 ## Prerequisites
 <!-- vale write-good.Passive = NO -->

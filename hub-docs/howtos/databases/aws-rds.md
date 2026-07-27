@@ -4,9 +4,8 @@ sidebar_position: 2
 description: Provision Amazon RDS for PostgreSQL and connect Hub with IAM auth.
 ---
 
-This page walks you through provisioning Amazon RDS for PostgreSQL. You grant
-Hub a database role that authenticates with AWS IAM, then point the chart at the
-resulting endpoint.
+Provision Amazon RDS for PostgreSQL, grant Hub a database role that
+authenticates with AWS IAM, then point the chart at the resulting endpoint.
 
 IAM authentication is the recommended path for self-hosted Hub on AWS. The
 `hub-api` Pod mints a short-lived RDS auth token per database connection from
@@ -78,8 +77,8 @@ Record three values once the instance is available:
 - the AWS region (for example, `us-east-1`).
 
 :::warning
-Enabling IAM database authentication on an existing instance triggers a reboot.
-Schedule it.
+Enabling IAM database authentication on an existing instance triggers a reboot,
+so schedule it during a maintenance window.
 :::
 
 ## Configure IAM authentication
@@ -89,12 +88,11 @@ IAM auth for RDS has three sides that must agree:
 1. An IAM role the `hub-api` Pod can assume.
 2. A policy on that role granting `rds-db:connect` for the database user Hub
    logs in as.
-3. A PostgreSQL role with the same name as the IAM user, granted the `rds_iam`
-   role inside the database.
+3. A PostgreSQL role with the same name as the IAM user, granted the `rds_iam` role inside the database.
 
 ### Create the database role
 
-Connect to the instance as the master user and create the role Hub uses. The
+Connect to the instance as the master user and create the role Hub uses. This
 role needs the `rds_iam` grant so RDS accepts IAM-issued tokens for it. It also
 needs ownership of the Hub database so migrations can create and alter
 objects.
@@ -341,7 +339,7 @@ errors.
 Use this section only if you can't use IAM authentication, such as when running
 outside AWS or on a Kubernetes cluster without workload identity. Password mode
 stores a long-lived credential in a Secret. Rotate it through whatever
-secret-management tool your organisation already uses.
+secret-management tool your organization already uses.
 
 Create the Secret in the Hub namespace:
 

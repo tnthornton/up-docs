@@ -4,9 +4,8 @@ sidebar_position: 15
 description: Upgrade Hub and understand schema migrations and rollbacks.
 ---
 
-This page walks you through upgrading a running Hub installation to a newer
-chart version. It covers how the chart applies schema migrations and what to consider
-before rolling back.
+Upgrading a running Hub installation to a newer chart version applies schema
+migrations, which constrain how far you can roll back.
 
 ## How releases work
 

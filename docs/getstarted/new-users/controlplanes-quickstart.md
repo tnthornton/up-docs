@@ -223,6 +223,6 @@ kind delete cluster --name quickstart
 - [Builders workshop][workshop] for real cloud resources.
 - [Hub overview][hub] for the full-fleet story.
 
-[upCli]: /controlplanes/cli/overview
-[hub]: /hub/overview
+[upCli]: /manuals/cli/overview
+[hub]: /hub/
 [workshop]: /getstarted/builders-workshop/project-foundations

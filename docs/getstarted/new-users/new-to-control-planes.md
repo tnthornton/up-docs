@@ -32,7 +32,7 @@ layer for your databases, IAM policies, compute resources, and more. If it has
 an API, you can manage it in Crossplane with a provider which is a package that
 enables Crossplane to provision infrastructure on an external service. 
 
-Crossplane doesn't simply create the infrastructure - like the Kubernetes
+Crossplane doesn't just create the infrastructure. Like the Kubernetes
 control plane, it manages everything in a reconciliation loop. Meaning it checks
 the state of its resources through its Provider - like provider-aws - which
 calls the underlying services API. If the resources doesn't match the manifest,

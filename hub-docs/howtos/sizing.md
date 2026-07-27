@@ -89,7 +89,7 @@ hub-connector:
 
 ### Medium
 
-For production installs serving a platform organisation with a moderate fleet.
+For production installs serving a platform organization with a moderate fleet.
 
 - **Workload envelope:** up to 25 connectors, up to 500,000 resources total, 50
   to 250 query RPS sustained.

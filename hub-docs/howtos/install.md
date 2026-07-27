@@ -4,9 +4,8 @@ sidebar_position: 2
 description: Install Hub with Helm against external Postgres and OIDC.
 ---
 
-This page walks you through installing and managing a self-hosted version of the
-Hub. Through this process, you set up a PostgreSQL database, connect an
-OIDC provider and configure your ingress routes.
+A self-hosted Hub install needs a PostgreSQL database, an OIDC provider, and
+ingress routes for the Hub services.
 
 ## Prerequisites
 
@@ -232,7 +231,7 @@ bindings by default. The next section adds those.
 ## Configure
 
 The bootstrap steps below register your first ControlPlane and grant your OIDC
-admin group organisation-wide admin rights.
+admin group organization-wide admin rights.
 
 ### Bootstrap the first control plane
 
@@ -297,7 +296,7 @@ Docker-network address.
 ### Bootstrap the admin OrganizationRoleBinding
 <!-- vale Google.Headings = YES -->
 
-Grant your OIDC admin group organisation-wide admin rights. The `name` on the
+Grant your OIDC admin group organization-wide admin rights. The `name` on the
 `Group` subject must match the value Hub sees in the OIDC token's group claim,
 prefixed with `<providerName>:`. With `providerName: oidc` and an OIDC group
 named `hub-admins`, the subject name is `oidc:hub-admins`.

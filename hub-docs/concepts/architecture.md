@@ -4,9 +4,6 @@ sidebar_position: 1
 description: How a self-hosted Hub installation fits together and what you provide.
 ---
 
-This page explains what a self-hosted Hub installation looks like, what you
-provide, and how to choose between the sub-guides.
-
 ## Architecture
 
 A self-hosted hub is a single cluster running the hub control plane components

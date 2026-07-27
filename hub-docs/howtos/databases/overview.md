@@ -4,10 +4,6 @@ sidebar_position: 1
 description: PostgreSQL Requirements and authentication modes for Hub.
 ---
 
-This page describes hub requirements for the PostgreSQL database you provide.
-You learn about the authentication modes supported in the hub Helm chart and
-how to choose a provisioning path for your cloud.
-
 The hub requires an externally managed PostgreSQL instance that you provision,
 create `hub-api` roles for, and give connection details through Helm values.
 

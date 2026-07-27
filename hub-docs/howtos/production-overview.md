@@ -39,7 +39,7 @@ HorizontalPodAutoscaler for `hub-api` so Pod count tracks CPU. See
 
 ## RBAC
 
-The demo bootstraps an organisation-level admin binding for a Keycloak group,
+The demo bootstraps an organization-level admin binding for a Keycloak group,
 which lets you log in immediately. For production, retarget that binding at a
 group from your real OIDC provider and add ControlPlane-scoped bindings for the
 rest of your users. The RBAC page documents Hub's role model alongside the

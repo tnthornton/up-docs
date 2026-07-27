@@ -4,9 +4,6 @@ sidebar_position: 13
 description: Scale hub-api with the Horizontal Pod Autoscaler.
 ---
 
-This page covers how to scale `hub-api` Pods horizontally with the Kubernetes
-Horizontal Pod Autoscaler.
-
 ## Horizontal pod autoscaler
 
 The chart includes an opt-in `HorizontalPodAutoscaler` for `hub-api`. When
@@ -38,7 +35,7 @@ Without it, the HPA can't read CPU metrics and doesn't scale.
 <!-- vale write-good.Passive = NO -->
 :::note
 The HPA needs CPU `requests` set on the `hub-api` container to compute
-utilisation. The chart leaves `resources` empty by default. Set requests and
+utilization. The chart leaves `resources` empty by default. Set requests and
 limits explicitly before enabling the HPA, or scaling decisions are
 undefined.
 :::
